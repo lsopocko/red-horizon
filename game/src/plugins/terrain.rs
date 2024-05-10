@@ -7,6 +7,7 @@ pub struct TerrainPlugin;
 impl Plugin for TerrainPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, (setup_assets, setup_colliders));
+        app.add_systems(Update, display_events);
     }
 }
 
@@ -56,5 +57,23 @@ fn setup_colliders(mut commands: Commands) {
     // Launch pad
     commands
         .spawn(Collider::cylinder(0.2, 1.2))
-        .insert(TransformBundle::from(Transform::from_xyz(0.0, 0.0, 0.0)));
+        .insert(TransformBundle::from(Transform::from_xyz(0.0, 0.0, 0.0)))
+        .insert(ActiveEvents::COLLISION_EVENTS)
+        .insert(Name::new("Launch Pad"));
+}
+
+fn display_events(mut collision_events: EventReader<CollisionEvent>, _query: Query<&Name>) {
+    for collision_event in collision_events.read() {
+        if let CollisionEvent::Started(entity1, entity2, _) = collision_event {
+            if let Ok(name1) = _query.get(*entity1) {
+                log::info!("Collision started with: {:?}", name1);
+            }
+        }
+
+        if let CollisionEvent::Stopped(entity1, entity2, _) = collision_event {
+            if let Ok(name1) = _query.get(*entity1) {
+                log::info!("Collision stopped with: {:?}", name1);
+            }
+        }
+    }
 }

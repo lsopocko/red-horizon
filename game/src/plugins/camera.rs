@@ -30,7 +30,7 @@ fn setup(mut commands: Commands) {
             color: Color::rgba(0.89, 0.51, 0.27, 1.0),
             directional_light_color: Color::rgba(1.0, 0.85, 0.85, 0.5),
             directional_light_exponent: 30.0,
-            falloff: FogFalloff::ExponentialSquared { density: 0.07 },
+            falloff: FogFalloff::ExponentialSquared { density: 0.03 },
         },
     ),));
 }

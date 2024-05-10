@@ -19,6 +19,10 @@ pub struct TelemetryData {
     pub wind_direction: Vec3,
 }
 
+fn format_vec3(vec: Vec3) -> String {
+    format!("({:.2}, {:.2}, {:.2})", vec.x, vec.y, vec.z)
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let mut stream = TcpStream::connect("127.0.0.1:8088").await?;
@@ -36,7 +40,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // print telemetry data line by line
         println!("Fuel: {}", telemetry.fuel);
         println!("Altitude: {}", telemetry.altitude);
-        println!("Velocity: {:?}", telemetry.velocity);
+        println!("Velocity: {:?}", format_vec3(telemetry.velocity));
         println!("Thrust: {}", telemetry.thrust);
         println!("Left ECS: {}", telemetry.left_ecs);
         println!("Right ECS: {}", telemetry.right_ecs);

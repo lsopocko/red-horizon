@@ -67,10 +67,10 @@ impl TelemetryChannel {
         let mut tx = self.tx.clone();
         match tx.try_send(data) {
             Ok(_) => {
-                log::info!("Telemetry data sent");
+                // log::info!("Telemetry data sent");
             }
             Err(e) => {
-                log::error!("Failed to send telemetry data: {:?}", e);
+                // log::error!("Failed to send telemetry data: {:?}", e);
             }
         }
     }
@@ -86,7 +86,8 @@ impl Plugin for TelemetryPlugin {
 }
 
 fn broadcast_telemetry_system(
-    rocket_telemetry_query: Query<(&Fuel, &Thrust, &LeftEcs, &RightEcs)>,
+    rocket_telemetry_query: Query<(&Fuel, &Thrust, &LeftEcs, &RightEcs, &Velocity, &Altitute)>,
+    wind_query: Query<(&WindSpeed, &WindDirection)>,
     telemetry_channel: Res<TelemetryChannel>,
 ) {
     let mut telemetry_data = TelemetryData {
@@ -100,11 +101,18 @@ fn broadcast_telemetry_system(
         wind_direction: Vec3::ZERO,
     };
 
-    for (fuel, thrust, left_ecs, right_ecs) in rocket_telemetry_query.iter() {
+    for (fuel, thrust, left_ecs, right_ecs, velocity, altitude) in rocket_telemetry_query.iter() {
         telemetry_data.fuel = fuel.value;
         telemetry_data.thrust = thrust.value;
         telemetry_data.left_ecs = left_ecs.value;
         telemetry_data.right_ecs = right_ecs.value;
+        telemetry_data.velocity = velocity.value;
+        telemetry_data.altitude = altitude.value;
+    }
+
+    for (wind_speed, wind_direction) in wind_query.iter() {
+        telemetry_data.wind_speed = wind_speed.value;
+        telemetry_data.wind_direction = wind_direction.value;
     }
 
     telemetry_channel.send_telemetry_data(telemetry_data);

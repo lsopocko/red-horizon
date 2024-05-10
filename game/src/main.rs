@@ -3,6 +3,7 @@ use bevy_rapier3d::prelude::*;
 
 use crate::plugins::camera::CameraPlugin;
 use crate::plugins::environment::EnvironmentPlugin;
+use crate::plugins::landing_compass::LandingCompassPlugin;
 use crate::plugins::rocket::RocketPlugin;
 use crate::plugins::telemetry::TelemetryPlugin;
 use crate::plugins::terrain::TerrainPlugin;
@@ -33,6 +34,7 @@ async fn main() {
         .add_plugins(TerrainPlugin)
         .add_plugins(RocketPlugin)
         .add_plugins(CameraPlugin)
+        .add_plugins(LandingCompassPlugin)
         .add_plugins(TelemetryPlugin)
         .add_plugins(WeatherPlugin {
             weather: _res.unwrap(),

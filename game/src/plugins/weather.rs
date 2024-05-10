@@ -1,4 +1,8 @@
-use bevy::{ecs::query, log, prelude::*};
+use bevy::{
+    ecs::query,
+    log::{self, tracing_subscriber::fmt::format},
+    prelude::*,
+};
 use rand::distributions::weighted;
 use serde_derive::{Deserialize, Serialize};
 
@@ -36,10 +40,12 @@ pub struct MarsWeather {
     current: Current,
 }
 
+const MARS_IN_PENSILVANIA: Vec2 = Vec2::new(40.6965, 80.0110);
+
 impl MarsWeather {
     pub async fn get() -> Result<MarsWeather, reqwest::Error> {
         let key = "ff39f338f00742eab5924359240905";
-        let query = format!("q={}", "48.8567,2.3508");
+        let query = format!("q={},{}", MARS_IN_PENSILVANIA.x, MARS_IN_PENSILVANIA.y);
         let url = format!(
             "https://api.weatherapi.com/v1/current.json?key={}&{}",
             key, query
@@ -88,14 +94,12 @@ fn convert_degrees_to_vec3(degrees: f32) -> Vec3 {
     let radians = degrees.to_radians();
     let x = radians.cos();
     let y = radians.sin();
-    Vec3::new(x, y, 0.0)
+    Vec3::new(x, 0.0, 0.0)
 }
 
 fn setup(mut commands: Commands, mut current_weather: ResMut<CurrentWeather>) {
     let wind_direction = convert_degrees_to_vec3(current_weather.wind_degree);
-    let wind_speed = current_weather.wind_kph / 100.0;
-    log::info!("Wind direction: {:?}", wind_direction);
-    log::info!("Wind speed: {:?}", wind_speed);
+    let wind_speed = current_weather.wind_kph / 10.0;
     commands.spawn(WeatherBundle {
         wind_direction: WindDirection {
             value: wind_direction,

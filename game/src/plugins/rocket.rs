@@ -54,6 +54,7 @@ struct Particle {
 
 const MAX_THRUST: f32 = 3.0;
 const MAX_ECS: f32 = 0.5;
+const START_ALTITUDE: f32 = 50.0;
 
 impl Plugin for RocketPlugin {
     fn build(&self, app: &mut App) {
@@ -107,7 +108,11 @@ fn setup_collider_body(mut commands: Commands) {
             linear_damping: 1.5,
             angular_damping: 1.0,
         })
-        .insert(TransformBundle::from(Transform::from_xyz(0.0, 0.3, 0.0)))
+        .insert(TransformBundle::from(Transform::from_xyz(
+            0.0,
+            START_ALTITUDE,
+            0.0,
+        )))
         .insert(RocketCollider);
 }
 
@@ -140,8 +145,10 @@ fn particle_emitter_system(
             rand::thread_rng().gen_range(-0.2..0.2),
         );
         let scale = rand::thread_rng().gen_range(0.01..0.1);
-        let rotation = Quat::IDENTITY;
-        let lifetime = 5.0;
+        // random rotation
+        let rotation =
+            Quat::from_rotation_y(rand::thread_rng().gen_range(0.0..std::f32::consts::PI));
+        let lifetime = 3.0;
         let color = Color::rgba(1.0, 1.0, 1.0, 0.5);
 
         commands
@@ -181,7 +188,6 @@ fn update_particle_system(
         particle.position += velocity * time.delta_seconds();
         particle.lifetime -= time.delta_seconds();
         particle.scale += time.delta_seconds() * 0.1;
-        particle.rotation *= Quat::from_rotation_y(0.1);
         transforms.get_mut(entity).unwrap().translation = particle.position;
         transforms.get_mut(entity).unwrap().scale = Vec3::splat(particle.scale);
         transforms.get_mut(entity).unwrap().rotation = particle.rotation;
@@ -213,9 +219,11 @@ fn rocket_physics_system(
 ) {
     for mut transform in rocket.iter_mut() {
         for mut body in collider.iter_mut() {
+            _velocity.single_mut().value =
+                ((body.translation - transform.translation) * 1000.0).round() / 10.0;
             transform.translation = body.translation;
             transform.rotation = body.rotation;
-            _altitude.single_mut().value = transform.translation.y;
+            _altitude.single_mut().value = body.translation.y;
         }
     }
 }
@@ -229,7 +237,7 @@ fn keyboard_control_system(
         if keyboard_input.pressed(KeyCode::Space) {
             thrust.value = MAX_THRUST.min(thrust.value + 2.0 * time.delta_seconds());
         } else {
-            thrust.value = (thrust.value - 1.0 * time.delta_seconds()).max(0.0);
+            thrust.value = 0.0;
         }
 
         if keyboard_input.pressed(KeyCode::KeyA) {
