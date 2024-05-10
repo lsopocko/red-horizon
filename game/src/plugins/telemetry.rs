@@ -1,44 +1,111 @@
 use bevy::{log, prelude::*};
+use serde::Serialize;
+use tokio::io::AsyncWriteExt;
+use tokio::net::TcpListener;
+use tokio::sync::mpsc;
 
-use super::rocket::*;
+use super::{
+    rocket::*,
+    weather::{WindDirection, WindSpeed},
+};
+#[derive(Debug, Clone, Serialize)]
+pub struct TelemetryData {
+    pub fuel: f32,
+    pub altitude: f32,
+    pub velocity: Vec3,
+    pub thrust: f32,
+    pub left_ecs: f32,
+    pub right_ecs: f32,
+    pub wind_speed: f32,
+    pub wind_direction: Vec3,
+}
+
+#[derive(Resource)]
+pub struct TelemetryChannel {
+    pub tx: mpsc::Sender<TelemetryData>,
+}
+
+impl TelemetryChannel {
+    pub fn new() -> Self {
+        let (tx, mut rx) = mpsc::channel::<TelemetryData>(32);
+        tokio::spawn(async move {
+            let listener = TcpListener::bind("127.0.0.1:8088").await.unwrap();
+            let mut last_recieved_data = TelemetryData {
+                fuel: 0.0,
+                altitude: 0.0,
+                velocity: Vec3::ZERO,
+                thrust: 0.0,
+                left_ecs: 0.0,
+                right_ecs: 0.0,
+                wind_speed: 0.0,
+                wind_direction: Vec3::ZERO,
+            };
+
+            match listener.accept().await {
+                Ok((mut _socket, addr)) => {
+                    while let Some(telemetry) = rx.recv().await {
+                        last_recieved_data = telemetry;
+
+                        if _socket
+                            .write_all(&bincode::serialize(&last_recieved_data).unwrap_or_default())
+                            .await
+                            .is_err()
+                        {
+                            break;
+                        }
+                    }
+                }
+                Err(e) => {
+                    log::error!("Failed to accept connection: {:?}", e);
+                }
+            }
+        });
+        Self { tx }
+    }
+
+    pub fn send_telemetry_data(&self, data: TelemetryData) {
+        let mut tx = self.tx.clone();
+        match tx.try_send(data) {
+            Ok(_) => {
+                log::info!("Telemetry data sent");
+            }
+            Err(e) => {
+                log::error!("Failed to send telemetry data: {:?}", e);
+            }
+        }
+    }
+}
 
 pub struct TelemetryPlugin;
 
 impl Plugin for TelemetryPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (print_telemetry_system));
+        app.insert_resource(TelemetryChannel::new())
+            .add_systems(Update, (broadcast_telemetry_system));
     }
 }
 
-fn print_telemetry_system(
-    fuel_query: Query<&Fuel>,
-    altitute_query: Query<&Altitute>,
-    velocity_query: Query<&Velocity>,
-    thrust_query: Query<&Thrust>,
-    left_ecs_query: Query<&LeftEcs>,
-    right_ecs_query: Query<&RightEcs>,
+fn broadcast_telemetry_system(
+    rocket_telemetry_query: Query<(&Fuel, &Thrust, &LeftEcs, &RightEcs)>,
+    telemetry_channel: Res<TelemetryChannel>,
 ) {
-    for fuel in fuel_query.iter() {
-        log::info!("Fuel: {}", fuel.value);
+    let mut telemetry_data = TelemetryData {
+        fuel: 0.0,
+        altitude: 0.0,
+        velocity: Vec3::ZERO,
+        thrust: 0.0,
+        left_ecs: 0.0,
+        right_ecs: 0.0,
+        wind_speed: 0.0,
+        wind_direction: Vec3::ZERO,
+    };
+
+    for (fuel, thrust, left_ecs, right_ecs) in rocket_telemetry_query.iter() {
+        telemetry_data.fuel = fuel.value;
+        telemetry_data.thrust = thrust.value;
+        telemetry_data.left_ecs = left_ecs.value;
+        telemetry_data.right_ecs = right_ecs.value;
     }
 
-    for altitute in altitute_query.iter() {
-        log::info!("Altitude: {}", altitute.value);
-    }
-
-    for thrust in thrust_query.iter() {
-        log::info!("Thrust: {}", thrust.value);
-    }
-
-    for left_ecs in left_ecs_query.iter() {
-        log::info!("Left ECS: {}", left_ecs.value);
-    }
-
-    for right_ecs in right_ecs_query.iter() {
-        log::info!("Right ECS: {}", right_ecs.value);
-    }
-
-    for velocity in velocity_query.iter() {
-        log::info!("Velocity: {:?}", velocity);
-    }
+    telemetry_channel.send_telemetry_data(telemetry_data);
 }

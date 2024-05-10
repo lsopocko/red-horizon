@@ -3,10 +3,14 @@ use bevy::{prelude::*, ui::update};
 use bevy_rapier3d::prelude::*;
 use rand::Rng;
 
+use super::weather::{WindDirection, WindSpeed};
+
 pub struct RocketPlugin;
 
 #[derive(Component, Debug)]
-pub struct Velocity(Vec3);
+pub struct Velocity {
+    pub value: Vec3,
+}
 
 #[derive(Component)]
 pub struct Thrust {
@@ -44,13 +48,12 @@ struct Particle {
     position: Vec3,
     velocity: Vec3,
     lifetime: f32,
-    color: Color,
     scale: f32,
     rotation: Quat,
 }
 
-const MAX_THRUST: f32 = 5.4;
-const MAX_ECS: f32 = 1.0;
+const MAX_THRUST: f32 = 3.0;
+const MAX_ECS: f32 = 0.5;
 
 impl Plugin for RocketPlugin {
     fn build(&self, app: &mut App) {
@@ -82,7 +85,9 @@ fn setup_assets(mut commands: Commands, asset_server: Res<AssetServer>) {
         })
         .insert(Thrust { value: 0.0 })
         .insert(Fuel { value: 1000.0 })
-        .insert(Velocity(Vec3::ZERO))
+        .insert(Velocity {
+            value: Vec3::new(0.0, 0.0, 0.0),
+        })
         .insert(LeftEcs { value: 0.0 })
         .insert(RightEcs { value: 0.0 })
         .insert(Altitute { value: 0.0 })
@@ -98,6 +103,10 @@ fn setup_collider_body(mut commands: Commands) {
             torque: Vec3::new(0.0, 0.0, 0.0),
         })
         .insert(ColliderMassProperties::Density(20.0))
+        .insert(Damping {
+            linear_damping: 1.5,
+            angular_damping: 1.0,
+        })
         .insert(TransformBundle::from(Transform::from_xyz(0.0, 0.3, 0.0)))
         .insert(RocketCollider);
 }
@@ -109,9 +118,9 @@ fn particle_emitter_system(
     mut _rocket_transform: Query<&Transform, With<Rocket>>,
     mut _thrust: Query<&mut Thrust, With<Rocket>>,
 ) {
-    let num_particles = 10;
+    let num_particles = 5;
 
-    let playerTranslation = _rocket_transform.single_mut().translation;
+    let player_translation = _rocket_transform.single_mut().translation;
     let thrust = _thrust.single_mut().value;
     let is_thrusting = thrust > 0.0;
 
@@ -120,11 +129,11 @@ fn particle_emitter_system(
     }
 
     for _ in 0..num_particles {
-        let position = playerTranslation;
+        let position = player_translation;
         let velocity = Vec3::new(
             rand::thread_rng().gen_range(-0.2..0.2),
             if is_thrusting {
-                rand::thread_rng().gen_range(0.0..(thrust * 0.001)) * -1.0
+                rand::thread_rng().gen_range(0.0..(thrust)) * -1.0
             } else {
                 0.0
             },
@@ -132,7 +141,7 @@ fn particle_emitter_system(
         );
         let scale = rand::thread_rng().gen_range(0.01..0.1);
         let rotation = Quat::IDENTITY;
-        let lifetime = 2.0;
+        let lifetime = 5.0;
         let color = Color::rgba(1.0, 1.0, 1.0, 0.5);
 
         commands
@@ -157,7 +166,6 @@ fn particle_emitter_system(
                 lifetime,
                 scale,
                 rotation,
-                color,
             });
     }
 }
@@ -166,9 +174,7 @@ fn update_particle_system(
     mut commands: Commands,
     time: Res<Time>,
     mut particles: Query<(Entity, &mut Particle)>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
     mut transforms: Query<&mut Transform>,
-    handles: Query<(&Handle<StandardMaterial>)>,
 ) {
     for (entity, mut particle) in particles.iter_mut() {
         let velocity = particle.velocity;
@@ -179,10 +185,6 @@ fn update_particle_system(
         transforms.get_mut(entity).unwrap().translation = particle.position;
         transforms.get_mut(entity).unwrap().scale = Vec3::splat(particle.scale);
         transforms.get_mut(entity).unwrap().rotation = particle.rotation;
-        // materials
-        //     .get_mut(handles.get(entity).unwrap())
-        //     .unwrap()
-        //     .base_color = Color::rgba(1.0, 1.0, 1.0, particle.lifetime / 4.0);
 
         if particle.lifetime <= 0.0 {
             commands.entity(entity).despawn()
@@ -250,6 +252,7 @@ fn applied_physics_forces_system(
     mut _left_ecs: Query<&mut LeftEcs, With<Rocket>>,
     mut _right_ecs: Query<&mut RightEcs, With<Rocket>>,
     mut _rocket_transform: Query<&Transform, With<Rocket>>,
+    mut _weather: Query<(&mut WindDirection, &mut WindSpeed)>,
 ) {
     const LOCAL_UP: Vec3 = Vec3::Y;
 
@@ -258,9 +261,10 @@ fn applied_physics_forces_system(
         let thrust_direction = rotation.mul_vec3(LOCAL_UP);
         let right_ecs = rotation.mul_vec3(Vec3::X) * _right_ecs.single_mut().value;
         let left_ecs = rotation.mul_vec3(-Vec3::X) * _left_ecs.single_mut().value;
-
-        for thrust in _thrust.iter() {
-            ext_force.force = thrust_direction * thrust.value + right_ecs + left_ecs;
+        for (mut wind_direction, mut wind_speed) in _weather.iter_mut() {
+            let wind = wind_direction.value * wind_speed.value;
+            ext_force.force =
+                thrust_direction * _thrust.single_mut().value + right_ecs + left_ecs + wind;
         }
     }
 }
