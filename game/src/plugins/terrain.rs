@@ -21,7 +21,7 @@ fn setup_assets(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     commands.spawn(TerrainBundle {
         scene: SceneBundle {
-            scene: asset_server.load("Map.glb#Scene0"),
+            scene: asset_server.load("Planet.glb#Scene0"),
             transform: Transform::from_xyz(0.0, 0.0, 0.0),
             ..default()
         },

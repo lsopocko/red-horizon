@@ -54,7 +54,7 @@ struct Particle {
 
 const MAX_THRUST: f32 = 3.0;
 const MAX_ECS: f32 = 0.5;
-const START_ALTITUDE: f32 = 50.0;
+const START_ALTITUDE: f32 = 36.0;
 
 impl Plugin for RocketPlugin {
     fn build(&self, app: &mut App) {

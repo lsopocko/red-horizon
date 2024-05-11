@@ -22,7 +22,7 @@ fn setup(mut commands: Commands) {
                 ..default()
             }
             .into(),
-            transform: Transform::from_xyz(0.0, 1.0, 8.0)
+            transform: Transform::from_xyz(0.0, 1.0, 10.0)
                 .looking_at(Vec3::new(0.0, 1.5, -3.0), Vec3::Y),
             ..default()
         },
@@ -30,7 +30,7 @@ fn setup(mut commands: Commands) {
             color: Color::rgba(0.89, 0.51, 0.27, 1.0),
             directional_light_color: Color::rgba(1.0, 0.85, 0.85, 0.5),
             directional_light_exponent: 30.0,
-            falloff: FogFalloff::ExponentialSquared { density: 0.03 },
+            falloff: FogFalloff::ExponentialSquared { density: 0.005 },
         },
     ),));
 }
@@ -41,7 +41,7 @@ fn follow_rocket_system(
 ) {
     for mut camera_transform in camera_query.iter_mut() {
         for rocket_transform in rocket_query.iter_mut() {
-            camera_transform.translation = rocket_transform.translation + Vec3::new(0.0, 1.0, 8.0);
+            camera_transform.translation = rocket_transform.translation + Vec3::new(0.0, 0.5, 15.0);
         }
     }
 }
