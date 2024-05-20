@@ -21,7 +21,7 @@ fn setup(
         PbrBundle {
             mesh: meshes.add(Torus::new(0.98, 1.0)),
             material: materials.add(StandardMaterial {
-                base_color: Color::rgba(1.0, 0.0, 0.0, 1.0),
+                base_color: Color::rgba(0.0, 1.0, 0.0, 1.0),
                 unlit: true,
                 cull_mode: None,
                 ..default()
@@ -45,7 +45,7 @@ fn track_landing_system(
 ) {
     for mut compass_transform in compass_query.iter_mut() {
         for camera_transform in camera_query.iter_mut() {
-            compass_transform.translation.y = camera_transform.translation.y - 1.5;
+            compass_transform.translation.y = camera_transform.translation.y - 2.5;
         }
     }
 }

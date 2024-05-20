@@ -3,7 +3,10 @@ use bevy::{prelude::*, ui::update};
 use bevy_rapier3d::prelude::*;
 use rand::Rng;
 
-use super::weather::{WindDirection, WindSpeed};
+use super::{
+    splash::GameState,
+    weather::{WindDirection, WindSpeed},
+};
 
 pub struct RocketPlugin;
 
@@ -52,9 +55,9 @@ struct Particle {
     rotation: Quat,
 }
 
-const MAX_THRUST: f32 = 3.0;
-const MAX_ECS: f32 = 0.5;
-const START_ALTITUDE: f32 = 36.0;
+const MAX_THRUST: f32 = 5.8;
+const MAX_ECS: f32 = 3.0;
+pub const START_ALTITUDE: f32 = 26.5; // 36.0;
 
 impl Plugin for RocketPlugin {
     fn build(&self, app: &mut App) {
@@ -68,7 +71,8 @@ impl Plugin for RocketPlugin {
                 rocket_fuel_system,
                 update_particle_system,
                 particle_emitter_system,
-            ),
+            )
+                .run_if(in_state(GameState::Playing)),
         );
     }
 }
@@ -77,9 +81,9 @@ fn setup_assets(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn(SceneBundle {
             transform: Transform {
-                translation: Vec3::new(0.0, 0.0, 0.0),
+                translation: Vec3::new(0.0, START_ALTITUDE, 0.0),
                 rotation: Quat::IDENTITY,
-                scale: Vec3::splat(0.15),
+                scale: Vec3::splat(0.20),
             },
             scene: asset_server.load("Rocket.glb#Scene0"),
             ..default()
@@ -98,7 +102,7 @@ fn setup_assets(mut commands: Commands, asset_server: Res<AssetServer>) {
 fn setup_collider_body(mut commands: Commands) {
     commands
         .spawn(RigidBody::Dynamic)
-        .insert(Collider::cuboid(0.15, 0.15, 0.15))
+        .insert(Collider::cuboid(0.20, 0.20, 0.20))
         .insert(ExternalForce {
             force: Vec3::new(0.0, 0.0, 0.0),
             torque: Vec3::new(0.0, 0.0, 0.0),
@@ -123,7 +127,7 @@ fn particle_emitter_system(
     mut _rocket_transform: Query<&Transform, With<Rocket>>,
     mut _thrust: Query<&mut Thrust, With<Rocket>>,
 ) {
-    let num_particles = 5;
+    let num_particles = 7;
 
     let player_translation = _rocket_transform.single_mut().translation;
     let thrust = _thrust.single_mut().value;
@@ -136,24 +140,24 @@ fn particle_emitter_system(
     for _ in 0..num_particles {
         let position = player_translation;
         let velocity = Vec3::new(
-            rand::thread_rng().gen_range(-0.2..0.2),
+            rand::thread_rng().gen_range(-0.45..0.45),
             if is_thrusting {
-                rand::thread_rng().gen_range(0.0..(thrust)) * -1.0
+                rand::thread_rng().gen_range(2.5..((thrust / 5.0) + 2.5)) * -1.0
             } else {
-                0.0
+                0.5
             },
-            rand::thread_rng().gen_range(-0.2..0.2),
+            rand::thread_rng().gen_range(-0.45..0.45),
         );
         let scale = rand::thread_rng().gen_range(0.01..0.1);
         // random rotation
         let rotation =
             Quat::from_rotation_y(rand::thread_rng().gen_range(0.0..std::f32::consts::PI));
-        let lifetime = 3.0;
+        let lifetime = 2.5;
         let color = Color::rgba(1.0, 1.0, 1.0, 0.5);
 
         commands
             .spawn(PbrBundle {
-                mesh: meshes.add(Sphere::default().mesh().uv(5, 5)),
+                mesh: meshes.add(Sphere::default().mesh().uv(3, 3)),
                 material: materials.add(StandardMaterial {
                     base_color: color,
                     cull_mode: None,
@@ -184,7 +188,12 @@ fn update_particle_system(
     mut transforms: Query<&mut Transform>,
 ) {
     for (entity, mut particle) in particles.iter_mut() {
-        let velocity = particle.velocity;
+        let mut velocity = particle.velocity;
+
+        if particle.position.y < 0.35 {
+            velocity.y = 0.0;
+        }
+
         particle.position += velocity * time.delta_seconds();
         particle.lifetime -= time.delta_seconds();
         particle.scale += time.delta_seconds() * 0.1;
@@ -267,12 +276,15 @@ fn applied_physics_forces_system(
     for mut ext_force in ext_forces.iter_mut() {
         let rotation = _rocket_transform.single_mut().rotation;
         let thrust_direction = rotation.mul_vec3(LOCAL_UP);
-        let right_ecs = rotation.mul_vec3(Vec3::X) * _right_ecs.single_mut().value;
-        let left_ecs = rotation.mul_vec3(-Vec3::X) * _left_ecs.single_mut().value;
+        let right_ecs = rotation.mul_vec3(-Vec3::Z) * _right_ecs.single_mut().value;
+        let left_ecs = rotation.mul_vec3(Vec3::Z) * _left_ecs.single_mut().value;
+        //tilt from left and right ecs
+        let tilt = right_ecs + left_ecs;
+        ext_force.torque = tilt * 0.1;
+
         for (mut wind_direction, mut wind_speed) in _weather.iter_mut() {
-            let wind = wind_direction.value * wind_speed.value;
-            ext_force.force =
-                thrust_direction * _thrust.single_mut().value + right_ecs + left_ecs + wind;
+            let wind = wind_direction.value * wind_speed.value / 10.0;
+            ext_force.force = thrust_direction * _thrust.single_mut().value + wind;
         }
     }
 }

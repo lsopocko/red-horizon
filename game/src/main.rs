@@ -1,10 +1,12 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
+use plugins::splash::GameState;
 
 use crate::plugins::camera::CameraPlugin;
 use crate::plugins::environment::EnvironmentPlugin;
 use crate::plugins::landing_compass::LandingCompassPlugin;
 use crate::plugins::rocket::RocketPlugin;
+use crate::plugins::splash::SplashPlugin;
 use crate::plugins::telemetry::TelemetryPlugin;
 use crate::plugins::terrain::TerrainPlugin;
 use crate::plugins::weather::MarsWeather;
@@ -29,7 +31,9 @@ async fn main() {
             RapierPhysicsPlugin::<NoUserData>::default(),
             // RapierDebugRenderPlugin::default(),
         ))
+        .add_systems(Update, rapier_context_system)
         // Internal plugins
+        .add_plugins(SplashPlugin)
         .add_plugins(EnvironmentPlugin)
         .add_plugins(TerrainPlugin)
         .add_plugins(RocketPlugin)
@@ -44,4 +48,18 @@ async fn main() {
             ..Default::default()
         })
         .run();
+}
+
+fn rapier_context_system(
+    mut rapier_config: ResMut<RapierConfiguration>,
+    mut game_state: ResMut<State<GameState>>,
+) {
+    match game_state.get() {
+        GameState::Playing => {
+            rapier_config.physics_pipeline_active = true;
+        }
+        GameState::Paused => {
+            rapier_config.physics_pipeline_active = false;
+        }
+    }
 }

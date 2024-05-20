@@ -21,38 +21,20 @@ fn setup_assets(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     commands.spawn(TerrainBundle {
         scene: SceneBundle {
-            scene: asset_server.load("Planet.glb#Scene0"),
+            scene: asset_server.load("Planet3.glb#Scene0"),
             transform: Transform::from_xyz(0.0, 0.0, 0.0),
             ..default()
         },
     });
 }
 
-fn setup_colliders(mut commands: Commands) {
-    // Ground
+fn setup_colliders(mut commands: Commands, asset_server: Res<AssetServer>) {
+    // Sphere planet
     commands
-        .spawn(Collider::cuboid(10.0, 0.1, 20.0))
-        .insert(TransformBundle::from(Transform::from_xyz(0.0, -0.1, -10.0)));
-
-    // // Walls
-    commands
-        .spawn(Collider::cuboid(0.1, 10.0, 10.0))
-        .insert(TransformBundle::from(Transform::from_xyz(-5.0, 10.0, -5.0)));
-
-    // // Right wall
-    commands
-        .spawn(Collider::cuboid(0.1, 10.0, 10.0))
-        .insert(TransformBundle::from(Transform::from_xyz(5.0, 10.0, -5.0)));
-
-    // Back wall
-    commands
-        .spawn(Collider::cuboid(10.0, 10.0, 0.1))
-        .insert(TransformBundle::from(Transform::from_xyz(0.0, 10.0, -15.0)));
-
-    // Front wall
-    commands
-        .spawn(Collider::cuboid(10.0, 10.0, 0.1))
-        .insert(TransformBundle::from(Transform::from_xyz(0.0, 10.0, 5.0)));
+        .spawn(Collider::ball(25.0))
+        .insert(TransformBundle::from(Transform::from_xyz(0.0, -25.0, 0.0)))
+        .insert(ActiveEvents::COLLISION_EVENTS)
+        .insert(Name::new("Planet"));
 
     // Launch pad
     commands
