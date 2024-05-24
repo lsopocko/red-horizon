@@ -1,4 +1,4 @@
-use bevy::{prelude::*, ui::update};
+use bevy::{audio::PlaybackMode, prelude::*, ui::update};
 
 use bevy_rapier3d::prelude::*;
 use rand::Rng;
@@ -44,6 +44,9 @@ pub struct Altitute {
 pub struct Rocket;
 
 #[derive(Component)]
+struct RocketSoundEffect;
+
+#[derive(Component)]
 pub struct RocketCollider;
 
 #[derive(Component)]
@@ -55,9 +58,9 @@ struct Particle {
     rotation: Quat,
 }
 
-const MAX_THRUST: f32 = 5.8;
+const MAX_THRUST: f32 = 6.5;
 const MAX_ECS: f32 = 3.0;
-pub const START_ALTITUDE: f32 = 26.5; // 36.0;
+pub const START_ALTITUDE: f32 = 26.75; // 36.0;
 
 impl Plugin for RocketPlugin {
     fn build(&self, app: &mut App) {
@@ -71,6 +74,7 @@ impl Plugin for RocketPlugin {
                 rocket_fuel_system,
                 update_particle_system,
                 particle_emitter_system,
+                engine_sound_system,
             )
                 .run_if(in_state(GameState::Playing)),
         );
@@ -97,6 +101,19 @@ fn setup_assets(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(RightEcs { value: 0.0 })
         .insert(Altitute { value: 0.0 })
         .insert(Rocket);
+
+    commands.spawn((
+        AudioBundle {
+            source: asset_server.load("rocket-engine.ogg"),
+            settings: PlaybackSettings {
+                mode: PlaybackMode::Loop,
+                paused: true,
+                ..default()
+            },
+            ..default()
+        },
+        RocketSoundEffect,
+    ));
 }
 
 fn setup_collider_body(mut commands: Commands) {
@@ -120,6 +137,22 @@ fn setup_collider_body(mut commands: Commands) {
         .insert(RocketCollider);
 }
 
+fn engine_sound_system(
+    music_controller: Query<&AudioSink, With<RocketSoundEffect>>,
+    mut _thrust: Query<&mut Thrust, With<Rocket>>,
+) {
+    let thrust = _thrust.single_mut().value;
+    if let Ok(sink) = music_controller.get_single() {
+        sink.set_volume(thrust / MAX_THRUST);
+        sink.set_speed(1.0 + thrust / MAX_THRUST);
+        if thrust == 0.0 {
+            sink.pause();
+        } else {
+            sink.play();
+        }
+    }
+}
+
 fn particle_emitter_system(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -127,11 +160,11 @@ fn particle_emitter_system(
     mut _rocket_transform: Query<&Transform, With<Rocket>>,
     mut _thrust: Query<&mut Thrust, With<Rocket>>,
 ) {
-    let num_particles = 7;
-
     let player_translation = _rocket_transform.single_mut().translation;
     let thrust = _thrust.single_mut().value;
     let is_thrusting = thrust > 0.0;
+    let thrust_percentage = thrust / MAX_THRUST;
+    let num_particles = (8.0 * thrust_percentage) as i32;
 
     if !is_thrusting {
         return;
@@ -246,7 +279,7 @@ fn keyboard_control_system(
         if keyboard_input.pressed(KeyCode::Space) {
             thrust.value = MAX_THRUST.min(thrust.value + 2.0 * time.delta_seconds());
         } else {
-            thrust.value = 0.0;
+            thrust.value = (0.0 as f32).max(thrust.value - 3.0 * time.delta_seconds());
         }
 
         if keyboard_input.pressed(KeyCode::KeyA) {
@@ -283,7 +316,7 @@ fn applied_physics_forces_system(
         ext_force.torque = tilt * 0.1;
 
         for (mut wind_direction, mut wind_speed) in _weather.iter_mut() {
-            let wind = wind_direction.value * wind_speed.value / 10.0;
+            let wind = wind_direction.value * wind_speed.value;
             ext_force.force = thrust_direction * _thrust.single_mut().value + wind;
         }
     }
