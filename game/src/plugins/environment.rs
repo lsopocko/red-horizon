@@ -69,8 +69,8 @@ fn setup(
                 mesh: meshes.add(Sphere::default().mesh().uv(3, 3)),
                 material: materials.add(StandardMaterial {
                     unlit: true,
-                    base_color: Color::rgb(1.0, 1.0, 1.0),
-                    emissive: Color::rgb(1.0, 1.0, 1.0),
+                    base_color: Srgba::rgb(1.0, 1.0, 1.0).into(),
+                    emissive: Srgba::rgb(1.0, 1.0, 1.0).into(),
                     ..default()
                 }),
                 transform: Transform {

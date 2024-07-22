@@ -1,3 +1,4 @@
+use bevy::math::DMat3;
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 use plugins::splash::GameState;
@@ -19,6 +20,7 @@ async fn main() {
     let _res = MarsWeather::get().await;
 
     App::new()
+        .register_type::<DMat3>()
         // External plugins
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
@@ -45,7 +47,7 @@ async fn main() {
         })
         .insert_resource(RapierConfiguration {
             gravity: Vec3::new(0.0, -3.71, 0.0),
-            ..Default::default()
+            ..RapierConfiguration::new(1.0)
         })
         .run();
 }

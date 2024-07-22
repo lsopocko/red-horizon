@@ -144,7 +144,7 @@ fn engine_sound_system(
     let thrust = _thrust.single_mut().value;
     if let Ok(sink) = music_controller.get_single() {
         sink.set_volume(thrust / MAX_THRUST);
-        sink.set_speed(1.0 + thrust / MAX_THRUST);
+        // sink.set_speed(1.0 + thrust / MAX_THRUST);
         if thrust == 0.0 {
             sink.pause();
         } else {
