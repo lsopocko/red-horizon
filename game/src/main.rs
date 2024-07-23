@@ -60,7 +60,7 @@ async fn main() {
 
 fn rapier_context_system(
     mut rapier_config: ResMut<RapierConfiguration>,
-    mut game_state: ResMut<State<GameState>>,
+    game_state: ResMut<State<GameState>>,
 ) {
     match game_state.get() {
         GameState::Playing => {

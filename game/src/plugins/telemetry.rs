@@ -42,7 +42,7 @@ impl TelemetryChannel {
             };
 
             match listener.accept().await {
-                Ok((mut _socket, addr)) => {
+                Ok((mut _socket, _addr)) => {
                     while let Some(telemetry) = rx.recv().await {
                         last_recieved_data = telemetry;
 
@@ -64,7 +64,7 @@ impl TelemetryChannel {
     }
 
     pub fn send_telemetry_data(&self, data: TelemetryData) {
-        let mut tx = self.tx.clone();
+        let tx = self.tx.clone();
         match tx.try_send(data) {
             Ok(_) => {
                 // log::info!("Telemetry data sent");
@@ -81,7 +81,7 @@ pub struct TelemetryPlugin;
 impl Plugin for TelemetryPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(TelemetryChannel::new())
-            .add_systems(Update, (broadcast_telemetry_system));
+            .add_systems(Update, broadcast_telemetry_system);
     }
 }
 

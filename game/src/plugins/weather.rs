@@ -1,9 +1,4 @@
-use bevy::{
-    ecs::query,
-    log::{self, tracing_subscriber::fmt::format},
-    prelude::*,
-};
-use rand::distributions::weighted;
+use bevy::prelude::*;
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Component, Default)]
@@ -86,18 +81,17 @@ impl Plugin for WeatherPlugin {
             wind_kph: self.weather.current.wind_kph,
             wind_degree: self.weather.current.wind_degree,
         })
-        .add_systems(Startup, (setup));
+        .add_systems(Startup, setup);
     }
 }
 
 fn convert_degrees_to_vec3(degrees: f32) -> Vec3 {
     let radians = degrees.to_radians();
     let x = radians.cos();
-    let y = radians.sin();
     Vec3::new(x, 0.0, 0.0)
 }
 
-fn setup(mut commands: Commands, mut current_weather: ResMut<CurrentWeather>) {
+fn setup(mut commands: Commands, current_weather: ResMut<CurrentWeather>) {
     let wind_direction = convert_degrees_to_vec3(current_weather.wind_degree);
     let wind_speed = current_weather.wind_kph / 10.0;
     commands.spawn(WeatherBundle {

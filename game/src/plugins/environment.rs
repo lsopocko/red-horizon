@@ -1,5 +1,4 @@
 use bevy::{
-    log,
     pbr::{CascadeShadowConfigBuilder, NotShadowCaster, NotShadowReceiver},
     prelude::*,
 };
@@ -9,7 +8,7 @@ pub struct EnvironmentPlugin;
 
 impl Plugin for EnvironmentPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (setup));
+        app.add_systems(Startup, setup);
     }
 }
 fn setup(
@@ -27,7 +26,7 @@ fn setup(
     // // Sun
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
-            color: Color::rgb(0.98, 0.95, 0.82),
+            color: Srgba::rgb(0.98, 0.95, 0.82).into(),
             illuminance: 3000.0,
             shadows_enabled: true,
             ..default()
@@ -47,7 +46,7 @@ fn setup(
                 unlit: true,
                 ior: 1.0,
                 perceptual_roughness: 1000.0,
-                base_color: Color::rgb(0.0, 0.0, 0.0),
+                base_color: Srgba::rgb(0.0, 0.0, 0.0).into(),
                 ..default()
             }),
             transform: Transform::from_scale(Vec3::splat(1.0)),

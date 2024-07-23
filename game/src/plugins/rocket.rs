@@ -1,4 +1,4 @@
-use bevy::{audio::PlaybackMode, prelude::*, ui::update};
+use bevy::{audio::PlaybackMode, prelude::*};
 
 use bevy_rapier3d::prelude::*;
 use rand::Rng;
@@ -186,7 +186,7 @@ fn particle_emitter_system(
         let rotation =
             Quat::from_rotation_y(rand::thread_rng().gen_range(0.0..std::f32::consts::PI));
         let lifetime = 2.5;
-        let color = Color::rgba(1.0, 1.0, 1.0, 0.5);
+        let color = Color::srgba(1.0, 1.0, 1.0, 0.5);
 
         commands
             .spawn(PbrBundle {
@@ -260,7 +260,7 @@ fn rocket_physics_system(
     mut _velocity: Query<&mut Velocity, With<Rocket>>,
 ) {
     for mut transform in rocket.iter_mut() {
-        for mut body in collider.iter_mut() {
+        for body in collider.iter_mut() {
             _velocity.single_mut().value =
                 ((body.translation - transform.translation) * 1000.0).round() / 10.0;
             transform.translation = body.translation;
@@ -279,7 +279,7 @@ fn keyboard_control_system(
         if keyboard_input.pressed(KeyCode::Space) {
             thrust.value = MAX_THRUST.min(thrust.value + 2.0 * time.delta_seconds());
         } else {
-            thrust.value = (0.0 as f32).max(thrust.value - 3.0 * time.delta_seconds());
+            thrust.value = 0.0_f32.max(thrust.value - 3.0 * time.delta_seconds());
         }
 
         if keyboard_input.pressed(KeyCode::KeyA) {
@@ -315,7 +315,7 @@ fn applied_physics_forces_system(
         let tilt = right_ecs + left_ecs;
         ext_force.torque = tilt * 0.1;
 
-        for (mut wind_direction, mut wind_speed) in _weather.iter_mut() {
+        for (wind_direction, wind_speed) in _weather.iter_mut() {
             let wind = wind_direction.value * wind_speed.value;
             ext_force.force = thrust_direction * _thrust.single_mut().value + wind;
         }

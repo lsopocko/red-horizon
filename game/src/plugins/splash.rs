@@ -18,7 +18,7 @@ pub struct Subtitle;
 impl Plugin for SplashPlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameState>()
-            .add_systems(Update, (pause_system))
+            .add_systems(Update, pause_system)
             .add_systems(Startup, show_splash_screen);
     }
 }
@@ -27,8 +27,8 @@ fn pause_system(
     mut commands: Commands,
     mut state: ResMut<NextState<GameState>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut title_query: Query<Entity, With<Title>>,
-    mut subtitle_query: Query<Entity, With<Subtitle>>,
+    title_query: Query<Entity, With<Title>>,
+    subtitle_query: Query<Entity, With<Subtitle>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Escape) {
         state.set(GameState::Paused)
@@ -54,7 +54,7 @@ fn show_splash_screen(mut commands: Commands) {
             "Red Horizon",
             TextStyle {
                 font_size: 96.,
-                color: Color::rgb(0.8, 0.2, 0.2),
+                color: Color::srgb(0.8, 0.2, 0.2),
                 ..default()
             },
         )

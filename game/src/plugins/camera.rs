@@ -11,7 +11,7 @@ const CAMERA_OFFSET: Vec3 = Vec3::new(0.0, 0.5, 12.0);
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (setup));
+        app.add_systems(Startup, setup);
         app.add_systems(
             Update,
             (follow_rocket_system).run_if(in_state(GameState::Playing)),
@@ -41,8 +41,8 @@ fn setup(mut commands: Commands) {
         FogSettings {
             // the color of fog should be purple
             // color: Color::rgba(0.89, 0.51, 0.27, 1.0),
-            color: Color::rgba(0.5, 0.0, 0.5, 1.0),
-            directional_light_color: Color::rgba(1.0, 0.85, 0.85, 0.5),
+            color: Color::srgba(0.5, 0.0, 0.5, 1.0),
+            directional_light_color: Color::srgba(1.0, 0.85, 0.85, 0.5),
             directional_light_exponent: 30.0,
             falloff: FogFalloff::ExponentialSquared { density: 0.008 },
         },

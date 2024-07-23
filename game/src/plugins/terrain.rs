@@ -28,7 +28,7 @@ fn setup_assets(mut commands: Commands, asset_server: Res<AssetServer>) {
     });
 }
 
-fn setup_colliders(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup_colliders(mut commands: Commands) {
     // Sphere planet
     commands
         .spawn(Collider::ball(25.0))
@@ -46,13 +46,13 @@ fn setup_colliders(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 fn display_events(mut collision_events: EventReader<CollisionEvent>, _query: Query<&Name>) {
     for collision_event in collision_events.read() {
-        if let CollisionEvent::Started(entity1, entity2, _) = collision_event {
+        if let CollisionEvent::Started(entity1, _entity2, _) = collision_event {
             if let Ok(name1) = _query.get(*entity1) {
                 log::info!("Collision started with: {:?}", name1);
             }
         }
 
-        if let CollisionEvent::Stopped(entity1, entity2, _) = collision_event {
+        if let CollisionEvent::Stopped(entity1, _entity2, _) = collision_event {
             if let Ok(name1) = _query.get(*entity1) {
                 log::info!("Collision stopped with: {:?}", name1);
             }

@@ -7,7 +7,7 @@ pub struct LandingCompassPlugin;
 
 impl Plugin for LandingCompassPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (setup));
+        app.add_systems(Startup, setup);
         app.add_systems(Update, track_landing_system);
     }
 }
@@ -21,7 +21,7 @@ fn setup(
         PbrBundle {
             mesh: meshes.add(Torus::new(0.98, 1.0)),
             material: materials.add(StandardMaterial {
-                base_color: Color::rgba(0.0, 1.0, 0.0, 1.0),
+                base_color: Color::srgba(0.0, 1.0, 0.0, 1.0),
                 unlit: true,
                 cull_mode: None,
                 ..default()
