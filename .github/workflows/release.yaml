@@ -32,20 +32,23 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
       - name: install wasm-bindgen-cli
+        working-directory: ./game
         run: |
           cargo install wasm-bindgen-cli
 
       - name: Build
+        working-directory: ./game
         run: |
           cargo build --release --target wasm32-unknown-unknown
 
       - name: Prepare package
+        working-directory: ./game
         run: |
           wasm-bindgen --no-typescript --out-name bevy_game --out-dir wasm --target web target/wasm32-unknown-unknown/release/${{ env.binary }}.wasm
           cp -r assets wasm/ || true # Try to copy, but ignore if it can't copy if source directory does not exist 
 
       - name: Package as a zip
-        working-directory: ./wasm
+        working-directory: ./game/wasm
         run: |
           zip --recurse-paths ../${{ env.binary }}.zip .
 
@@ -84,17 +87,19 @@ jobs:
           sudo apt-get update; sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
 
       - name: Build
+        working-directory: ./game
         run: |
           cargo build --release --target x86_64-unknown-linux-gnu
 
       - name: Prepare package
+        working-directory: ./game
         run: |
           mkdir linux
           cp target/x86_64-unknown-linux-gnu/release/${{ env.binary }} linux/
           cp -r assets linux/ || true # Try to copy, but ignore if it can't copy if source directory does not exist
 
       - name: Package as a zip
-        working-directory: ./linux
+        working-directory: ./game/linux
         run: |
           zip --recurse-paths ../${{ env.binary }}.zip .
 
@@ -130,10 +135,12 @@ jobs:
           targets: x86_64-pc-windows-msvc
 
       - name: Build
+        working-directory: ./game
         run: |
           cargo build --release --target x86_64-pc-windows-msvc
 
       - name: Prepare package
+        working-directory: ./game
         run: |
           mkdir windows
           cp target/x86_64-pc-windows-msvc/release/${{ env.binary }}.exe windows/
@@ -180,10 +187,12 @@ jobs:
           export MACOSX_DEPLOYMENT_TARGET="10.9"
 
       - name: Build
+        working-directory: ./game
         run: |
           cargo build --release --target x86_64-apple-darwin
 
       - name: Prepare Package
+        working-directory: ./game
         run: |
           mkdir -p ${{ env.binary }}.app/Contents/MacOS
           cp target/x86_64-apple-darwin/release/${{ env.binary }} ${{ env.binary }}.app/Contents/MacOS/
@@ -226,10 +235,12 @@ jobs:
           export MACOSX_DEPLOYMENT_TARGET="11"
 
       - name: Build
+        working-directory: ./game
         run: |
           cargo build --release --target aarch64-apple-darwin
 
       - name: Prepare Package
+        working-directory: ./game
         run: |
           mkdir -p ${{ env.binary }}.app/Contents/MacOS
           cp target/aarch64-apple-darwin/release/${{ env.binary }} ${{ env.binary }}.app/Contents/MacOS/

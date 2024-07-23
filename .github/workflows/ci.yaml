@@ -33,6 +33,7 @@ jobs:
       - name: Install Dependencies
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
       - name: Run cargo test
+        working-directory: ./game
         run: cargo test
 
   # Run cargo clippy -- -D warnings
@@ -60,6 +61,7 @@ jobs:
       - name: Install Dependencies
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
       - name: Run clippy
+        working-directory: ./game
         run: cargo clippy -- -D warnings
 
   # Run cargo fmt --all -- --check
@@ -75,4 +77,5 @@ jobs:
         with:
           components: rustfmt
       - name: Run cargo fmt
+        working-directory: ./game
         run: cargo fmt --all -- --check
