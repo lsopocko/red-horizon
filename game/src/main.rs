@@ -14,7 +14,7 @@ use crate::plugins::environment::EnvironmentPlugin;
 use crate::plugins::landing_compass::LandingCompassPlugin;
 use crate::plugins::rocket::RocketPlugin;
 use crate::plugins::splash::SplashPlugin;
-use crate::plugins::telemetry::TelemetryPlugin;
+// use crate::plugins::telemetry::TelemetryPlugin;
 use crate::plugins::terrain::TerrainPlugin;
 use crate::plugins::weather::MarsWeather;
 use crate::plugins::weather::WeatherPlugin;
@@ -47,7 +47,7 @@ async fn main() {
         .add_plugins(RocketPlugin)
         .add_plugins(CameraPlugin)
         .add_plugins(LandingCompassPlugin)
-        .add_plugins(TelemetryPlugin)
+        // .add_plugins(TelemetryPlugin)
         .add_plugins(WeatherPlugin {
             weather: _res.unwrap(),
         })
